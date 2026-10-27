@@ -2,6 +2,8 @@
 
 #include <windows.h>
 
+#include <chrono>
+#include <filesystem>
 #include <functional>
 #include <optional>
 #include <unordered_map>
@@ -42,9 +44,12 @@ public:
     std::vector<HWND> GetUnsavedWindows() const;
     std::vector<HWND> GetUnknownWindows() const;
     bool DiscoverOpenWindows();
+    bool UpdateForegroundWindowState();
     bool AreAllWindowsSaved() const;
 
     bool SaveWindow(HWND window);
+    std::vector<HWND> FindWindowsForFile(const std::filesystem::path& filePath);
+    bool SaveFile(const std::filesystem::path& filePath);
     bool CloseWindow(HWND window, bool force = false);
 
 private:
@@ -52,11 +57,16 @@ private:
         SaveHandler saveHandler;
         WindowSaveState state;
         unsigned long long generation;
+        bool stateReported;
     };
+
+    static bool SendSaveShortcut(HWND window);
 
     std::unordered_map<HWND, Entry> windows_;
     ClosePrompt closePrompt_;
     unsigned long long nextGeneration_ = 0;
+    HWND foregroundWindow_ = nullptr;
+    std::chrono::steady_clock::time_point foregroundSince_{};
 };
 
 } // namespace wininfo
